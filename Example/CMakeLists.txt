@@ -20,8 +20,20 @@ set(PROJECT_SOURCES
     Example.h
 )
 
+set(ThirdParty_INCLUDE_Directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ThirdParty/ImGui
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ThirdParty/ImGuizmo
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ThirdParty/ImNodes
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ThirdParty/ImPlot
+        ${CMAKE_CURRENT_SOURCE_DIR}/../ThirdParty/ImPlot3D
+)
+
 add_executable(${PROJECT_NAME}
     ${PROJECT_SOURCES}
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${ThirdParty_INCLUDE_Directory}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
