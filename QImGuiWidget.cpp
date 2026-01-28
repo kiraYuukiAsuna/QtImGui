@@ -25,32 +25,14 @@
 
 static ImGuiKey ImGui_ImplQt_QKeyToImGuiKey(int key, QKeyEvent *event);
 
-// 自定义删除器，确保在销毁 FontAtlas 前解锁
-struct FontAtlasDeleter {
-	static void cleanup(ImFontAtlas *atlas) {
-		if (atlas) {
-			atlas->Locked = false;
-			IM_DELETE(atlas);
-		}
-	}
-};
-
 ImFontAtlas *QImGuiInterface::GetFontAtlas() {
-#ifndef GImGui
-	static QScopedPointer<ImFontAtlas, FontAtlasDeleter> FontAtlas;
-#else  // 假如定义了 GImGui 宏, 则代表开发者可能想在多线程环境下使用
-	thread_local static QScopedPointer<ImFontAtlas, FontAtlasDeleter> FontAtlas;
-#endif
-
-	if (!FontAtlas) {
-		FontAtlas.reset(IM_NEW(ImFontAtlas)());
-	}
-
-	return FontAtlas.get();
+	ImGuiContext *ctx = ImGui::GetCurrentContext();
+	if (!ctx) return nullptr;
+	return ctx->IO.Fonts;
 }
 QImGuiInterface::QImGuiInterface() {
-	im_timer.start();
-	imgui = ImGui::CreateContext(GetFontAtlas());
+	imgui = ImGui::CreateContext();
+	ImGui::SetCurrentContext(imgui);
 	InitImguiCtx();
 }
 void QImGuiInterface::InitImguiCtx() {
