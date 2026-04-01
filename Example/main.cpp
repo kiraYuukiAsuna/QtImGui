@@ -26,10 +26,11 @@ int main(int argc, char* argv[]) {
 		0,
 	};
 
-	QImGuiInterface::GetFontAtlas()->AddFontFromFileTTF((const char*)u8"C:\\Windows\\Fonts\\msyh.ttc", 18.0f, 0, ranges);
+	Example *example = new Example();
+	example->AddFontFromFileTTF((const char*)u8"C:\\Windows\\Fonts\\msyh.ttc", 18.0f, 0, ranges);
 	QImGuiWidget w(&a);
 	w.resize(950, 650);
 	w.show();
-	w.setFrame(new Example());
+	w.setFrame(example);
 	return a.exec();
 }

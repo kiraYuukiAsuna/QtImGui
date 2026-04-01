@@ -19,7 +19,7 @@ class QImGuiInterface : public QObject {
 	friend class QImGuiWidget;
 
 public:
-	static ImFontAtlas *GetFontAtlas();
+	ImFont *AddFontFromFileTTF(const char *filename, float size_pixels, const ImFontConfig *font_cfg = nullptr, const ImWchar *glyph_ranges = nullptr);
 	virtual ~QImGuiInterface();
 	void moveToImguiGlWidget(QImGuiWidget *);
 

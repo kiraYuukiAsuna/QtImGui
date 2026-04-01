@@ -25,11 +25,6 @@
 
 static ImGuiKey ImGui_ImplQt_QKeyToImGuiKey(int key, QKeyEvent *event);
 
-ImFontAtlas *QImGuiInterface::GetFontAtlas() {
-	ImGuiContext *ctx = ImGui::GetCurrentContext();
-	if (!ctx) return nullptr;
-	return ctx->IO.Fonts;
-}
 QImGuiInterface::QImGuiInterface() {
 	imgui = ImGui::CreateContext();
 	ImGui::SetCurrentContext(imgui);
@@ -57,6 +52,17 @@ void QImGuiInterface::InitImguiCtx() {
 	// Controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;  // Enable Docking
 #endif												   // IMGUI_HAS_DOCK
+}
+ImFont *QImGuiInterface::AddFontFromFileTTF(const char *filename, float size_pixels, const ImFontConfig *font_cfg, const ImWchar *glyph_ranges) {
+	IM_ASSERT(imgui != nullptr && "QImGuiInterface must own a valid ImGui context.");
+	IM_ASSERT(!frame_drawing && "Add fonts before the first frame begins.");
+	IM_ASSERT(!imgui->IO.Fonts->Locked && "Cannot modify a locked ImFontAtlas. Add fonts before the first frame begins.");
+
+	ImGuiContext *old_ctx = ImGui::GetCurrentContext();
+	ImGui::SetCurrentContext(imgui);
+	ImFont *font = imgui->IO.Fonts->AddFontFromFileTTF(filename, size_pixels, font_cfg, glyph_ranges);
+	ImGui::SetCurrentContext(old_ctx);
+	return font;
 }
 QImGuiInterface::~QImGuiInterface() { ImGui::DestroyContext(imgui); }
 void QImGuiInterface::moveToImguiGlWidget(QImGuiWidget *w) { w->setFrame(this); }
@@ -339,15 +345,17 @@ void QImGuiWidget::paintGL() {
 	ImGui::SetCurrentContext(OldImguiCtx);
 }
 void QImGuiWidget::QtOpenGlNewFarme() {
+	ImFontAtlas *atlas = FrameInterface->imgui->IO.Fonts;
 	auto buildFontTex = [this]() {
 		unsigned char *pixels = 0;
 		int width, height;
-		QImGuiInterface::GetFontAtlas()->GetTexDataAsRGBA32(&pixels, &width, &height);
+		ImFontAtlas *atlas = FrameInterface->imgui->IO.Fonts;
+		atlas->GetTexDataAsRGBA32(&pixels, &width, &height);
 		FontTex = this->CreateTexture(pixels, width, height, GL_RGBA);
-		QImGuiInterface::GetFontAtlas()->SetTexID((ImTextureID)-1);
+		atlas->SetTexID((ImTextureID)-1);
 	};
 	// 此处判断发生在渲染第一次执行或更新(添加)字体后
-	if (!QImGuiInterface::GetFontAtlas()->IsBuilt()) {
+	if (!atlas->IsBuilt()) {
 		if (FontTex) {
 			if (this->context()->extraFunctions()->glIsTexture(FontTex))
 				this->context()->extraFunctions()->glDeleteTextures(1, &FontTex);
@@ -369,7 +377,7 @@ void QImGuiWidget::QtImguiImplNewFarme() {
 
 	// ImGui 1.92+ 要求对自管理的 FontAtlas 调用 ImFontAtlasUpdateNewFrame
 	// 但只在当前帧尚未更新时调用（多个 widget 共享同一个 FontAtlas 时）
-	ImFontAtlas *atlas = QImGuiInterface::GetFontAtlas();
+	ImFontAtlas *atlas = FrameInterface->imgui->IO.Fonts;
 	int currentFrameCount = ImGui::GetFrameCount();
 	if (atlas->Builder == nullptr || atlas->Builder->FrameCount < currentFrameCount) {
 		ImFontAtlasUpdateNewFrame(atlas, currentFrameCount, false);
